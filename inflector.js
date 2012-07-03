@@ -4,7 +4,7 @@
  */
 var Inflector = (typeof module !== "undefined" && module.exports) || {};
 
-(function (exports) {
+(function (Inflector) {
     // Cached inflections
     var cache = {};
     // Uncountable words
@@ -12,11 +12,11 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
     // Irregular words
     var irregular = {child: 'children', clothes: 'clothing', man: 'men', movie: 'movies', person: 'people', woman: 'women', mouse: 'mice', goose: 'geese', ox: 'oxen', leaf: 'leaves', course: 'courses', size: 'sizes', was: 'were', is: 'are', verse: 'verses', hero: 'heroes', purchase: 'purchases', expense: 'expenses'};
 
-    exports.uncountable = function(str) {
-        return uncountable.hasOwnProperty(str.toLowerCase());
+    Inflector.uncountable = function(str) {
+        return uncountable.hasOwnProperty((str + '').toLowerCase());
     };
 
-    exports.singular = function(str, count) {
+    Inflector.singular = function(str, count) {
         count = (typeof count === 'undefined') ? 1 : (1 * count);
 
         // Do nothing when count is not 1
@@ -25,7 +25,7 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
         }
 
         // Remove garbage
-        str = trim(str);
+        str = trim(str + '');
 
         var length = str.length;
 
@@ -35,7 +35,7 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
             return cache[key];
         }
 
-        if (exports.uncountable(str)) {
+        if (Inflector.uncountable(str)) {
             return cache[key] = str;
         }
 
@@ -49,23 +49,21 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
         }
         else if (str.match(/[sxz]es$/) || str.match(/[^aeioudgkprt]hes$/)) {
             // Remove "es"
-            console.log('es');
             str = str.slice(-2);
         }
         else if (str.match(/[^aeiou]ies$/)) {
             // Replace "ies" with "y"
             str = str.slice(-3) + 'y';
         }
-        else if (str.charAt(length - 1) === 's' && str.charAt(length - 2) !== 'ss') {
+        else if (str.charAt(length - 1) === 's' && str.substring(length - 2) !== 'ss') {
             // Remove singular "s"
-            console.log('s');
             str = str.substring(0, length - 1);
         }
 
         return cache[key] = str;
     };
 
-    exports.plural = function(str, count) {
+    Inflector.plural = function(str, count) {
         count = (typeof count === 'undefined') ? 0 : (1 * count);
 
         // Do nothing when count is not 1
@@ -74,7 +72,7 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
         }
 
         // Remove garbage
-        str = trim(str);
+        str = trim(str + '');
 
         // Cache key name
         var key = 'plural_' + str + count;
@@ -82,7 +80,9 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
             return cache[key];
         }
 
-        if (exports.uncountable(str)) {
+        var is_uppercase = (str.toUpperCase() === str);
+
+        if (Inflector.uncountable(str)) {
             return cache[key] = str;
         }
 
@@ -100,26 +100,34 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
             str += 's';
         }
 
+        if (is_uppercase) {
+            str = str.toUpperCase();
+        }
+
         return cache[key] = str;
     };
 
-    exports.camelize = function(str) {
-        str = 'x' + trim(str).toLowerCase();
-        str = str.replace(/[\s_]+/g, ' ');
+    Inflector.camelize = function(str) {
+        str = 'x' + trim(str + '').toLowerCase();
+        str = ucwords(str.replace(/[\s_]+/g, ' '));
 
-        return (str.replace(' ', '')).substring(1);
+        return (str.replace(/ /g, '')).substring(1);
     };
 
-    exports.decamelize = function(str, sep/* = ' '*/) {
-        //str = str.replace(/([a-z])([A-Z])/g, )
+    Inflector.decamelize = function(str, sep) {
+        sep = (typeof sep !== 'undefined') ? sep : ' ';
+
+        return trim(str + '').replace(/([a-z])([A-Z])/g, function($1, $2) {
+            return $1 + sep + $2;
+        }).toLowerCase();
     };
 
-    exports.underscore = function(str) {
-        return trim(str).replace(/\s+/g, '_');
+    Inflector.underscore = function(str) {
+        return trim(str + '').replace(/\s+/g, '_');
     };
 
-    exports.humanize = function(str) {
-        return trim(str).replace(/[_-]+/g, ' ');
+    Inflector.humanize = function(str) {
+        return trim(str + '').replace(/[_-]+/g, ' ');
     };
 
     var trim = String.prototype.trim ?
@@ -135,6 +143,12 @@ var Inflector = (typeof module !== "undefined" && module.exports) || {};
                 '' :
                 text.toString().replace(/^\s+/, "").replace(/\s+$/, "");
         }
+
+    var ucwords = function(str) {
+        return (str + '').replace(/^([a-z])|\s+([a-z])/g, function ($1) {
+            return $1.toUpperCase();
+        });
+    };
 
     var object_search = function(str, obj) {
         for (var key in obj) {
